@@ -5,8 +5,10 @@ import urllib
 from PIL import Image
 from timm.data import resolve_data_config
 from timm.data.transforms_factory import create_transform
-import argparse
-import json
+# import argparse
+from omegaconf import DictConfig, OmegaConf
+import hydra
+
 
 def get_inference(modelname,imageurl):
   model = timm.create_model(modelname, pretrained=True)
@@ -20,7 +22,6 @@ def get_inference(modelname,imageurl):
 
   img = Image.open(filename).convert('RGB')
   tensor = transform(img).unsqueeze(0) # transform and add batch dimension
-
 
   with torch.no_grad():
       out = model(tensor)
@@ -42,13 +43,18 @@ def get_inference(modelname,imageurl):
   # # [('Samoyed', 0.6425196528434753), ('Pomeranian', 0.04062102362513542), ('keeshond', 0.03186424449086189), ('white wolf', 0.01739676296710968), ('Eskimo dog', 0.011717947199940681)]
 
   top_prob, top_catid = torch.topk(probabilities, 1)
-  return json.dumps({"predicted":categories[top_catid],"confidence":top_prob.item()})
+  return {"predicted":categories[top_catid],"confidence":top_prob.item()}
+
+@hydra.main(version_base=None, config_path=".", config_name="config")
+def main(cfg:DictConfig):
+    print(get_inference(cfg.model.name,cfg.image.url))
 
 if __name__=="__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--model",help="model name")
-    parser.add_argument("--image",help="image url")
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument("--model",help="model name")
+    # parser.add_argument("--image",help="image url")
 
-    args = parser.parse_args()
+    # args = parser.parse_args()
 
-    print(get_inference(args.model,args.image))
+    # print(get_inference(args.model,args.image))
+    main()
