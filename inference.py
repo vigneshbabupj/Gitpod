@@ -6,18 +6,20 @@ from PIL import Image
 from timm.data import resolve_data_config
 from timm.data.transforms_factory import create_transform
 # import argparse
-from omegaconf import DictConfig, OmegaConf
-import hydra
+import json
+import click
 
-
-def get_inference(modelname,imageurl):
-  model = timm.create_model(modelname, pretrained=True)
+@click.command()
+@click.option("--model", help="model name")
+@click.option("--image", prompt="image url", help="image url")
+def get_inference(model,image):
+  model = timm.create_model(model, pretrained=True)
   model.eval()
 
   config = resolve_data_config({}, model=model)
   transform = create_transform(**config)
 
-  url, filename = (imageurl, "test.jpg")
+  url, filename = (image, "test.jpg")
   urllib.request.urlretrieve(url, filename)
 
   img = Image.open(filename).convert('RGB')
@@ -43,11 +45,8 @@ def get_inference(modelname,imageurl):
   # # [('Samoyed', 0.6425196528434753), ('Pomeranian', 0.04062102362513542), ('keeshond', 0.03186424449086189), ('white wolf', 0.01739676296710968), ('Eskimo dog', 0.011717947199940681)]
 
   top_prob, top_catid = torch.topk(probabilities, 1)
-  return {"predicted":categories[top_catid],"confidence":top_prob.item()}
-
-@hydra.main(version_base=None, config_path=".", config_name="config")
-def main(cfg:DictConfig):
-    print(get_inference(cfg.model.name,cfg.image.url))
+  print(json.dumps({"predicted":categories[top_catid],"confidence":top_prob.item()}))
+#   return {"predicted":categories[top_catid],"confidence":top_prob.item()}
 
 if __name__=="__main__":
     # parser = argparse.ArgumentParser()
@@ -57,4 +56,4 @@ if __name__=="__main__":
     # args = parser.parse_args()
 
     # print(get_inference(args.model,args.image))
-    main()
+    print(get_inference())
