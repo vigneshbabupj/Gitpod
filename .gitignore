@@ -151,3 +151,7 @@ logs/
 .env
 .autoenv
 .cog
+
+*/__pycache__/
+*.pyc
+/lightning-hydra-template/outputs/
